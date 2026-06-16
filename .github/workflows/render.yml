@@ -36,7 +36,7 @@ jobs:
           npx --yes hyperframes render . \
             --output renders/ace-magnates-full.mp4 \
             --fps 60 \
-            --quality standard \
+            --quality draft \
             --resolution portrait \
             --workers 1 \
             --low-memory-mode \
