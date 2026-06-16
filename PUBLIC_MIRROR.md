@@ -11,6 +11,6 @@ URL should treat the mirror above as authoritative.
 Render policy:
 
 - GitHub Actions should render from the public mirror repo.
-- Render outputs are split into 300-frame chunks for distribution and review.
-- The render job uploads the chunk artifacts, and the follow-up job downloads and reassembles them into the final MP4.
+- GitHub Actions renders the video as four separate 300-frame chunks.
+- The follow-up job downloads the four rendered chunk artifacts and reassembles them into the final MP4 with FFmpeg.
 - The private repo mirrors the source, but the public mirror is the render-facing source of truth.

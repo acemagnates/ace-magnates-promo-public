@@ -912,8 +912,13 @@
   <script>
     (function () {
       window.__timelines = window.__timelines || {};
+      const variables = window.__hyperframes?.getVariables?.() || {};
+      const chunkStart = Number.isFinite(Number(variables.chunkStart)) ? Number(variables.chunkStart) : 0;
+      const chunkDuration = Number.isFinite(Number(variables.chunkDuration)) ? Number(variables.chunkDuration) : 20;
+      const chunkEnd = chunkStart + chunkDuration;
       const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
       const root = document.querySelector(".ace-magnates-stage");
+      root.dataset.duration = String(chunkDuration);
       const fx = document.getElementById("fx-canvas");
       const ctx = fx.getContext("2d");
       const cursor = document.getElementById("cursor");
@@ -974,6 +979,27 @@
       }
 
       const proxy = { t: 0, amount: 0 };
+
+      document.querySelectorAll(".clip[data-start][data-duration]").forEach((clip) => {
+        const originalStart = Number(clip.dataset.start);
+        const originalDuration = Number(clip.dataset.duration);
+        const originalEnd = originalStart + originalDuration;
+        const visibleStart = Math.max(originalStart, chunkStart);
+        const visibleEnd = Math.min(originalEnd, chunkEnd);
+
+        if (visibleEnd <= visibleStart) {
+          clip.dataset.start = "0";
+          clip.dataset.duration = "0.001";
+          return;
+        }
+
+        clip.dataset.start = String(visibleStart - chunkStart);
+        clip.dataset.duration = String(visibleEnd - visibleStart);
+
+        if (clip.tagName === "AUDIO" || clip.tagName === "VIDEO") {
+          clip.dataset.mediaStart = String(visibleStart - originalStart);
+        }
+      });
 
       tl.to(proxy, {
         t: 20,
@@ -1075,9 +1101,11 @@
       // Ambient motion
       tl.to(".fog", { y: -24, x: 18, duration: 3.4, yoyo: true, repeat: 4, ease: "sine.inOut" }, 0);
 
-      // Register and start with an initial draw.
-      window.__timelines["ace-magnates-promo"] = tl;
-      drawFx(0);
+      // Register a shifted timeline so each render job captures its own window.
+      const renderTl = gsap.timeline({ paused: true });
+      renderTl.add(tl, -chunkStart);
+      window.__timelines["ace-magnates-promo"] = renderTl;
+      drawFx(chunkStart);
     })();
   </script>
 </body>
