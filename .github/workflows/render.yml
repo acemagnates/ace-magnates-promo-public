@@ -36,8 +36,10 @@ jobs:
           npx --yes hyperframes render . \
             --output renders/ace-magnates-full.mp4 \
             --fps 60 \
-            --quality high \
+            --quality standard \
             --resolution portrait \
+            --workers 1 \
+            --low-memory-mode \
             --strict
 
       - name: Split into 3 chunks
