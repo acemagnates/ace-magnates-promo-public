@@ -46,18 +46,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      - name: Generate static 300-frame source
+        run: |
+          node scripts/make-render-chunk.mjs ${{ matrix.chunk }} ${{ matrix.chunk_start }} ${CHUNK_DURATION_SECONDS}
+
       - name: Render 300-frame chunk
         run: |
           mkdir -p renders
           npx --yes hyperframes render . \
+            --composition renders/chunk-sources/render-chunk-${{ matrix.chunk }}.html \
             --output renders/ace-magnates-chunk-${{ matrix.chunk }}.mp4 \
             --fps 60 \
             --quality draft \
             --resolution portrait \
             --workers 1 \
             --low-memory-mode \
-            --strict \
-            --variables '{"chunkStart":${{ matrix.chunk_start }},"chunkDuration":5}'
+            --strict
 
       - name: Upload rendered chunk
         uses: actions/upload-artifact@v4
