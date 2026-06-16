@@ -1,0 +1,60 @@
+name: Render Ace Magnates
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PUBLIC_RENDER_MIRROR: https://github.com/acemagnates/ace-magnates-promo-public
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Confirm render source
+        run: echo "Rendering from ${PUBLIC_RENDER_MIRROR}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Render full video
+        run: |
+          mkdir -p renders
+          npx --yes hyperframes render . \
+            --output renders/ace-magnates-full.mp4 \
+            --fps 60 \
+            --quality high \
+            --resolution portrait \
+            --strict
+
+      - name: Split into 3 chunks
+        run: |
+          mkdir -p renders/chunks
+          ffmpeg -y -i renders/ace-magnates-full.mp4 -ss 0.000 -t 6.667 -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -an renders/chunks/ace-magnates-chunk-1.mp4
+          ffmpeg -y -i renders/ace-magnates-full.mp4 -ss 6.667 -t 6.667 -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -an renders/chunks/ace-magnates-chunk-2.mp4
+          ffmpeg -y -i renders/ace-magnates-full.mp4 -ss 13.334 -t 6.666 -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -an renders/chunks/ace-magnates-chunk-3.mp4
+
+      - name: Upload render chunks
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-magnates-render-chunks
+          path: renders/chunks/*.mp4
+
+      - name: Upload full render
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-magnates-full-render
+          path: renders/ace-magnates-full.mp4
